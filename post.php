@@ -1,0 +1,381 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+// Security check: Only allow admin or superadmin
+if (!isset($_SESSION['role']) || !in_array(strtolower($_SESSION['role']), ['admin', 'superadmin'])) {
+    header("Location: index.php?page=home"); 
+    exit();
+}
+
+// Database connection fallback (in case it's not already included by a master router)
+if (!isset($conn)) {
+    $servername = "localhost";
+    $db_username = "root";
+    $db_password = "";
+    $dbname = "cms";
+    $conn = new mysqli($servername, $db_username, $db_password, $dbname);
+}
+
+// Fetch total posts count
+$total_posts = 0;
+if (isset($conn) && !$conn->connect_error) {
+    $count_res = $conn->query("SELECT COUNT(*) as c FROM posts");
+    if($count_res) $total_posts = $count_res->fetch_assoc()['c'];
+    
+    // Fetch all posts joined with user data
+    $sql = "SELECT p.*, u.username FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC";
+    $result = $conn->query($sql);
+
+    // Build the category filter options from the categories that actually exist
+    $categories = [];
+    $cat_res = $conn->query("SELECT DISTINCT category FROM posts WHERE category <> '' ORDER BY category");
+    if ($cat_res) {
+        while ($c = $cat_res->fetch_assoc()) { $categories[] = $c['category']; }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Posts — CMS Admin</title>
+  <!-- Fonts are self-hosted via assets/beautify.css (works offline) -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <style>
+    /* Consistently using CMS UI CSS variables */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #eff6ff;
+      --accent: #f59e0b;
+      --dark: #0f172a;
+      --dark2: #1e293b;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --white: #ffffff;
+      --green: #10b981;
+      --red: #ef4444;
+      --orange: #f59e0b;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --shadow-sm: 0 1px 6px rgba(0,0,0,0.06);
+      --sidebar-w: 260px;
+    }
+    
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+    
+    /* ── Sidebar ── */
+    .sidebar { 
+      width: var(--sidebar-w); 
+      background: var(--dark); 
+      color: #94a3b8; 
+      display: flex; 
+      flex-direction: column; 
+      flex-shrink: 0; 
+      min-height: 100vh; 
+      position: fixed; 
+      top: 0; left: 0; bottom: 0; 
+      z-index: 100;
+      box-shadow: 2px 0 20px rgba(0,0,0,0.2);
+    }
+    .sidebar .brand { 
+      padding: 20px 24px; 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      text-decoration: none;
+      height: 68px;
+    }
+    .logo-icon { 
+      width: 32px; height: 32px; 
+      background: var(--primary); 
+      border-radius: 8px; 
+      display: flex; align-items: center; justify-content: center; 
+      font-size: 16px; font-weight: 800; color: var(--white);
+    }
+    .logo-text { 
+      font-family: 'Playfair Display', serif; 
+      font-size: 20px; font-weight: 700; color: var(--white); 
+      letter-spacing: -0.5px; 
+    }
+    .logo-text span { color: var(--accent); }
+    .brand small {
+      display: block; font-family: 'Inter', sans-serif; font-size: 10px; 
+      text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 2px;
+    }
+    
+    .sidebar nav { padding: 24px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .sidebar nav a { 
+      display: flex; align-items: center; gap: 12px; 
+      color: #94a3b8; text-decoration: none; 
+      padding: 12px 16px; border-radius: 8px;
+      font-size: 14px; font-weight: 500; transition: all .2s; 
+    }
+    .sidebar nav a:hover { background: rgba(255,255,255,0.05); color: var(--white); }
+    .sidebar nav a.active { background: var(--primary); color: var(--white); font-weight: 600; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    .sidebar nav a.logout-btn { color: var(--red); margin-top: auto; }
+    .sidebar nav a.logout-btn:hover { background: #fef2f2; color: #dc2626; }
+    
+    /* ── Page Content ── */
+    .page { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; width: calc(100% - var(--sidebar-w)); }
+    
+    /* ── Topbar ── */
+    .topbar { 
+      background: var(--white); 
+      border-bottom: 1px solid var(--border); 
+      padding: 0 32px; height: 68px; 
+      display: flex; align-items: center; justify-content: space-between; 
+      position: sticky; top: 0; z-index: 50; 
+    }
+    .topbar .page-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--text); }
+    .topbar .right { display: flex; align-items: center; gap: 24px; }
+    .topbar .visit-link { color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .topbar .visit-link:hover { color: var(--primary-dark); }
+    
+    .user-profile { display: flex; align-items: center; gap: 12px; padding-left: 24px; border-left: 1px solid var(--border); }
+    .topbar .user-info { font-size: 12px; color: var(--muted); text-align: right; }
+    .topbar .user-info strong { color: var(--text); display: block; font-size: 14px; font-weight: 600; text-transform: capitalize; }
+    .avatar { 
+      width: 40px; height: 40px; 
+      background: var(--primary-light); color: var(--primary); 
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+      font-size: 16px; font-weight: 700; 
+    }
+    
+    /* ── Main Dashboard Area ── */
+    .content { padding: 32px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+    
+    .content-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .content-header h2 { font-size: 24px; font-weight: 800; color: var(--text); }
+    .content-header span.count { font-size: 14px; color: var(--muted); font-weight: 500; margin-left: 8px; }
+    
+    .btn-create { 
+      display: inline-flex; align-items: center; gap: 8px; background: var(--primary); 
+      color: var(--white); padding: 10px 20px; border-radius: 8px; text-decoration: none; 
+      font-size: 14px; font-weight: 600; transition: background .2s; 
+    }
+    .btn-create:hover { background: var(--primary-dark); }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filter-bar input[type="text"], .filter-bar select {
+      padding: 10px 16px; border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; background: var(--white); color: var(--text);
+      transition: all 0.2s;
+    }
+    .filter-bar input[type="text"] { min-width: 260px; }
+    .filter-bar input:focus, .filter-bar select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    
+    /* ── Tables Panel ── */
+    .panel { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden; }
+    
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 16px 24px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { background: #f8fafc; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg); }
+    
+    img.thumb { width: 64px; height: 48px; object-fit: cover; border-radius: 6px; display: block; border: 1px solid var(--border); }
+    .placeholder-thumb { width: 64px; height: 48px; background: #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #94a3b8; border: 1px solid var(--border); }
+    
+    .post-title { font-weight: 600; color: var(--text); }
+    .author-name { font-weight: 500; color: var(--dark2); }
+    
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+    .badge.published { background: #ecfdf5; color: #059669; }
+    .badge.pending { background: #fffbeb; color: #d97706; }
+    
+    .action-links { display: flex; gap: 8px; align-items: center; justify-content: center; }
+    .icon-btn {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 10px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-flex;
+      transition: all .15s; color: var(--text);
+    }
+    .icon-btn:hover { background: #e2e8f0; }
+    .icon-btn.approve { color: var(--green); }
+    .icon-btn.approve:hover { background: #ecfdf5; border-color: #a7f3d0; }
+    .icon-btn.delete { color: var(--red); }
+    .icon-btn.delete:hover { background: #fef2f2; border-color: #fecaca; }
+    
+    @media(max-width: 1024px) {
+      .sidebar { display: none; } 
+      .page { margin-left: 0; width: 100%; } 
+      .user-profile { border-left: none; padding-left: 0; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
+  <link rel="stylesheet" href="assets/beautify.css?v=3">
+  <script src="assets/beautify.js" defer></script>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <a href="index.php?page=admin" class="brand">
+      <div class="logo-icon">C</div>
+      <div>
+        <div class="logo-text">CM<span>S</span></div>
+        <small>Admin Panel</small>
+      </div>
+    </a>
+    <nav>
+      <a href="index.php?page=admin"><span class="icon">📊</span> Dashboard</a>
+      <a href="index.php?page=post" class="active"><span class="icon">📝</span> Manage Posts</a>
+      <a href="index.php?page=comments"><span class="icon">💬</span> Manage Comments</a>
+      <a href="index.php?page=list"><span class="icon">👥</span> Manage Users</a>
+      <a href="index.php?page=subscribers"><span class="icon">📧</span> Subscribers</a>
+      <a href="index.php?page=detail"><span class="icon">👤</span> My Profile</a>
+      <a href="index.php?page=logout" class="logout-btn"><span class="icon">🚪</span> Logout</a>
+    </nav>
+  </aside>
+
+  <div class="page">
+    <div class="topbar">
+      <span class="page-title">Posts Directory</span>
+      <div class="right">
+        <a href="index.php?page=home" class="visit-link">🌐 Visit Site</a>
+        <div class="user-profile">
+          <div class="user-info">
+            <strong><?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?></strong>
+            <span style="text-transform: capitalize;"><?php echo htmlspecialchars($_SESSION['role'] ?? 'Role'); ?></span>
+          </div>
+          <div class="avatar"><?php echo strtoupper(substr($_SESSION['username'] ?? 'A', 0, 1)); ?></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="content-header">
+        <h2>All Posts <span class="count">(<?php echo $total_posts; ?> total)</span></h2>
+        <a href="index.php?page=create_post" class="btn-create">＋ Add New Post</a>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="🔍 Search posts by title...">
+        <select id="statusFilter">
+          <option value="all">All Statuses</option>
+          <option value="published">Published</option>
+          <option value="pending">Pending</option>
+        </select>
+        <select id="categoryFilter">
+          <option value="all">All Categories</option>
+          <?php foreach ($categories as $cat): ?>
+            <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Thumb</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Status</th>
+              <th>Category</th>
+              <th>Date</th>
+              <th style="text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            if (isset($result) && $result->num_rows > 0):
+                while($row = $result->fetch_assoc()):
+            ?>
+                <tr class="post-row"
+                    data-title="<?php echo htmlspecialchars(strtolower($row['title'])); ?>"
+                    data-status="<?php echo htmlspecialchars($row['status']); ?>"
+                    data-category="<?php echo htmlspecialchars($row['category']); ?>">
+                  <td>#<?php echo $row['id']; ?></td>
+                  <td>
+                    <?php if(!empty($row['image_path'])): ?>
+                        <img class="thumb" src="<?php echo htmlspecialchars($row['image_path']); ?>" alt="thumbnail">
+                    <?php else: ?>
+                        <div class="placeholder-thumb">📰</div>
+                    <?php endif; ?>
+                  </td>
+                  <td class="post-title"><?php echo htmlspecialchars($row['title']); ?></td>
+                  <td class="author-name">@<?php echo htmlspecialchars($row['username']); ?></td>
+                  <td>
+                      <?php if($row['status'] == 'published'): ?>
+                          <span class="badge published">Published</span>
+                      <?php else: ?>
+                          <span class="badge pending">Pending</span>
+                      <?php endif; ?>
+                  </td>
+                  <td><?php echo htmlspecialchars($row['category']); ?></td>
+                  <td><?php echo date('M d, Y', strtotime($row['created_at'])); ?></td>
+                  <td>
+                    <div class="action-links">
+                      <a href="index.php?page=single_post&id=<?php echo $row['id']; ?>" class="icon-btn" title="View Post" target="_blank">👁️</a>
+                      
+                      <?php if($row['status'] == 'published'): ?>
+                          <a href="index.php?page=admin_action&action=unpublish_post&id=<?php echo $row['id']; ?>" class="icon-btn" title="Unpublish">📥</a>
+                      <?php else: ?>
+                          <a href="index.php?page=admin_action&action=publish_post&id=<?php echo $row['id']; ?>" class="icon-btn approve" title="Approve & Publish">✅</a>
+                      <?php endif; ?>
+                      
+                      <a href="index.php?page=admin_action&action=delete_post&id=<?php echo $row['id']; ?>" class="icon-btn delete" title="Delete Post" onclick="return confirm('Are you sure you want to permanently delete this post?');">🗑️</a>
+                    </div>
+                  </td>
+                </tr>
+            <?php 
+                endwhile; 
+            else: 
+            ?>
+                <tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--muted);">No posts found in the database.</td></tr>
+            <?php
+            endif;
+            ?>
+            <tr id="noMatchRow" style="display:none;"><td colspan="8" style="text-align: center; padding: 40px; color: var(--muted);">No posts match the current filters.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Live filtering: search by title + status dropdown + category dropdown
+    (function () {
+      var search   = document.getElementById('searchInput');
+      var status   = document.getElementById('statusFilter');
+      var category = document.getElementById('categoryFilter');
+      var rows     = document.querySelectorAll('tr.post-row');
+      var noMatch  = document.getElementById('noMatchRow');
+
+      function applyFilters() {
+        var q = search.value.trim().toLowerCase();
+        var s = status.value;
+        var c = category.value;
+        var visible = 0;
+
+        rows.forEach(function (row) {
+          var okTitle    = q === ''    || row.dataset.title.indexOf(q) !== -1;
+          var okStatus   = s === 'all' || row.dataset.status === s;
+          var okCategory = c === 'all' || row.dataset.category === c;
+          var show = okTitle && okStatus && okCategory;
+          row.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+
+        if (noMatch) noMatch.style.display = (rows.length && visible === 0) ? '' : 'none';
+      }
+
+      search.addEventListener('input', applyFilters);
+      status.addEventListener('change', applyFilters);
+      category.addEventListener('change', applyFilters);
+    })();
+  </script>
+
+</body>
+</html>
+<?php
+// Note: the database connection is closed by the master router (index.php).
+// We intentionally do NOT close it here to avoid a double-close.
+?>
