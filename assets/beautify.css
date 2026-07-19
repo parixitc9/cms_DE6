@@ -1,0 +1,468 @@
+/* ============================================================================
+   beautify.css — "Editorial Ink" design system for the CMS
+   ----------------------------------------------------------------------------
+   Loaded AFTER each page's inline <style>, so equal-specificity :root rules and
+   component rules declared here win. This single file re-skins the whole site:
+   home, article, about, auth, user profile and the admin panel.
+
+   Direction: editorial magazine. Ink-black canvas details, a single warm
+   crimson accent, high-contrast Playfair Display headlines over a clean
+   Public-Sans-like Inter body, generous whitespace, hairline rules and
+   restrained, purposeful motion.
+   ========================================================================== */
+
+/* ---------- 1. Self-hosted fonts (offline-safe) ---------- */
+@font-face { font-family:'Inter'; font-style:normal; font-weight:300; font-display:swap; src:url('fonts/inter-300.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:400; font-display:swap; src:url('fonts/inter-400.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:500; font-display:swap; src:url('fonts/inter-500.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:600; font-display:swap; src:url('fonts/inter-600.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:700; font-display:swap; src:url('fonts/inter-700.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:800; font-display:swap; src:url('fonts/inter-800.woff2') format('woff2'); }
+@font-face { font-family:'Playfair Display'; font-style:normal; font-weight:700; font-display:swap; src:url('fonts/playfair-700.woff2') format('woff2'); }
+@font-face { font-family:'Playfair Display'; font-style:normal; font-weight:800; font-display:swap; src:url('fonts/playfair-800.woff2') format('woff2'); }
+
+/* ============================================================================
+   2. DESIGN TOKENS  — redefine the palette the whole site reads from.
+   Every page declares these same variable names inline; because this file
+   loads last, these values take over globally.
+   ========================================================================== */
+:root {
+  /* Ink + paper */
+  --ink:        #111014;   /* near-black, warm */
+  --ink-2:      #1b1a20;
+  --ink-3:      #26242c;
+  --paper:      #faf8f5;   /* warm off-white canvas */
+  --paper-2:    #f3efe9;   /* slightly deeper panel tint */
+  --white:      #ffffff;
+
+  /* Editorial accent — warm crimson */
+  --accent:      #c0362c;
+  --accent-dark: #9c2a22;
+  --accent-soft: #f7e9e7;
+
+  /* Map the legacy "primary/blue" tokens onto ink so every existing rule
+     that referenced blue now reads as confident editorial black. */
+  --primary:        #111014;
+  --primary-dark:   #000000;
+  --primary-light:  #f3efe9;
+  --primary-bright: #26242c;
+  --accent-2:       #c0362c;
+
+  /* Text */
+  --text:        #17161b;
+  --text-light:  #3a3740;
+  --muted:       #6d6a74;
+  --muted-2:     #8b8892;
+
+  /* Structure */
+  --bg:      #faf8f5;
+  --border:  #e7e1d8;      /* warm hairline */
+  --border-strong: #17161b;
+
+  /* Status colours (kept semantic, tuned warmer) */
+  --green: #2f7a55;
+  --red:   #c0362c;
+  --accent-amber: #b8791f;
+
+  /* Radii — editorial = crisp, low radius */
+  --radius:    6px;
+  --radius-lg: 10px;
+
+  /* Shadows — soft, warm, low-key (ink casts warm shadow on paper) */
+  --shadow-sm: 0 1px 2px rgba(23,22,27,.05), 0 1px 3px rgba(23,22,27,.05);
+  --shadow:    0 6px 18px rgba(23,22,27,.07), 0 2px 6px rgba(23,22,27,.05);
+  --shadow-lg: 0 18px 44px rgba(23,22,27,.13), 0 6px 16px rgba(23,22,27,.08);
+
+  /* Gradients — the "primary" gradient is now a rich ink wash */
+  --grad-primary: linear-gradient(135deg, #26242c 0%, #17161b 55%, #050507 100%);
+  --grad-accent:  linear-gradient(135deg, #d1493d 0%, #c0362c 60%, #9c2a22 100%);
+  --grad-ink:     linear-gradient(160deg, #17161b 0%, #100f13 60%, #050506 100%);
+
+  --ring: 0 0 0 3px rgba(192,54,44,.18);
+
+  /* Type */
+  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ============================================================================
+   3. GLOBAL BASELINE
+   ========================================================================== */
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(192,54,44,.04), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: .002em;
+}
+
+/* Editorial headline treatment everywhere */
+.logo-text,
+.hero h1, .page-header h1, .article-title,
+.welcome-banner h2, .about-card h2, .profile-card h3,
+.comments-section h3, .topbar .page-title,
+.auth-header h1 {
+  font-family: var(--serif) !important;
+  letter-spacing: -.01em;
+}
+
+::selection { background: rgba(192,54,44,.16); color: var(--ink); }
+
+/* Warm, slim scrollbar */
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-thumb { background: #d8cfc2; border-radius: 20px; border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: #c3b8a6; background-clip: content-box; }
+
+/* Global focus-visible ring for keyboard users (accessibility) */
+a:focus-visible, button:focus-visible, input:focus-visible,
+textarea:focus-visible, [tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: 4px;
+}
+
+/* ============================================================================
+   4. NAVBAR  (public pages) — ink masthead with a hairline accent underline
+   ========================================================================== */
+.navbar {
+  background: var(--grad-ink) !important;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 1px 0 rgba(192,54,44,.35), 0 10px 30px rgba(5,5,7,.28) !important;
+  backdrop-filter: saturate(120%) blur(4px);
+}
+.navbar-inner { height: 72px; }
+.logo-icon {
+  background: var(--white) !important;
+  color: var(--ink) !important;
+  border-radius: 4px !important;
+  font-family: var(--serif);
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35);
+}
+.logo-text { font-size: 23px !important; letter-spacing: .3px !important; color: var(--white); }
+.logo-text span { color: var(--accent) !important; }
+
+.nav-links a { transition: color .2s, background .2s; letter-spacing: .01em; }
+.nav-links a:hover { transform: none; background: rgba(255,255,255,.08); color: var(--white); }
+.nav-links a.active { color: var(--white); }
+.nav-links a.register-btn {
+  background: var(--accent) !important;
+  color: var(--white) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 6px 16px rgba(192,54,44,.32);
+  letter-spacing: .02em;
+}
+.nav-links a.register-btn:hover {
+  background: var(--accent-dark) !important;
+  box-shadow: 0 8px 22px rgba(192,54,44,.42);
+  transform: translateY(-1px);
+}
+.avatar-sm { background: var(--accent) !important; border-radius: 4px !important; font-weight: 700; }
+
+/* ============================================================================
+   5. HERO  (home) — magazine cover: kicker, oversized serif, rule under stats
+   ========================================================================== */
+.hero {
+  background: var(--grad-ink) !important;
+  padding: 88px 24px 72px !important;
+  position: relative;
+}
+.hero::after {
+  content: ''; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: min(1192px, calc(100% - 48px)); height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
+}
+.hero-tag {
+  background: transparent !important;
+  color: var(--accent) !important;
+  border: 1px solid rgba(192,54,44,.55) !important;
+  border-radius: 2px !important;
+  letter-spacing: .22em !important;
+  font-weight: 700 !important;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.hero h1 {
+  font-size: clamp(40px, 6.2vw, 76px) !important;
+  font-weight: 800 !important;
+  line-height: 1.04 !important;
+  letter-spacing: -.02em !important;
+  color: var(--white);
+}
+.hero h1 span { color: var(--accent) !important; font-style: italic; }
+.hero p { color: #b9b4ac !important; font-size: 17px !important; max-width: 540px !important; }
+.hero-stats { gap: 0 !important; margin-top: 8px; }
+.hero-stat { padding: 0 34px; position: relative; }
+.hero-stat + .hero-stat::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 1px; height: 34px; background: rgba(255,255,255,.14);
+}
+.hero-stat strong {
+  font-family: var(--serif); font-size: 32px !important; font-weight: 800;
+  background: none !important; -webkit-text-fill-color: currentColor !important; color: var(--white) !important;
+}
+.hero-stat span { letter-spacing: .12em !important; color: #8f8a83 !important; }
+
+/* ============================================================================
+   6. CATEGORY PILLS — flat editorial tabs
+   ========================================================================== */
+.categories { background: var(--white); border-bottom: 1px solid var(--border); }
+.cat-pill {
+  border-radius: 2px !important;
+  border-color: var(--border) !important;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: .02em;
+  transition: color .18s, background .18s, border-color .18s;
+}
+.cat-pill:hover { transform: none; box-shadow: none; background: var(--paper-2) !important; color: var(--ink) !important; border-color: var(--border) !important; }
+.cat-pill.active {
+  background: var(--ink) !important;
+  color: var(--white) !important;
+  border-color: var(--ink) !important;
+  box-shadow: none;
+}
+
+/* ============================================================================
+   7. POST CARDS — clean editorial cards, serif headline, rule + kicker badge
+   ========================================================================== */
+.post-card {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  transition: transform .3s cubic-bezier(.2,.7,.2,1), box-shadow .3s, border-color .3s;
+}
+.post-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: #ddd4c8 !important; }
+.post-card-image img { transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+.post-card:hover .post-card-image img { transform: scale(1.05); }
+.post-cat-badge {
+  background: var(--accent) !important;
+  color: var(--white) !important;
+  border-radius: 2px !important;
+  letter-spacing: .12em !important;
+  box-shadow: 0 4px 12px rgba(192,54,44,.3);
+  backdrop-filter: none;
+}
+.post-card h2 { font-family: var(--serif) !important; font-weight: 700; font-size: 20px !important; line-height: 1.32 !important; letter-spacing: -.01em; }
+.post-card.featured h2 { font-size: 27px !important; }
+.post-card h2 a:hover { color: var(--accent) !important; }
+.author-avatar { background: var(--ink) !important; color: var(--white) !important; border-radius: 3px !important; }
+.post-card-footer { border-top: 1px solid var(--border); }
+.read-btn {
+  background: transparent !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--ink) !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  font-weight: 600;
+  letter-spacing: .02em;
+  transition: background .2s, color .2s, transform .2s;
+}
+.read-btn:hover { background: var(--ink) !important; color: var(--white) !important; transform: translateX(2px); }
+
+/* ============================================================================
+   8. BUTTONS (shared)
+   ========================================================================== */
+.btn-submit, .login-btn, .btn-primary {
+  background: var(--ink) !important;
+  color: var(--white) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 6px 16px rgba(23,22,27,.18) !important;
+  letter-spacing: .02em;
+  transition: transform .2s, box-shadow .2s, background .2s;
+}
+.btn-submit:hover, .login-btn:hover, .btn-primary:hover {
+  background: #000 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(23,22,27,.28) !important;
+}
+.btn-login-outline {
+  border: 1.5px solid var(--ink) !important;
+  color: var(--ink) !important;
+  border-radius: 4px !important;
+}
+.btn-login-outline:hover { background: var(--ink) !important; color: var(--white) !important; }
+.btn-secondary { border-radius: 4px !important; }
+.newsletter-btn {
+  background: var(--accent) !important;
+  color: var(--white) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 6px 16px rgba(192,54,44,.28);
+  letter-spacing: .02em;
+  transition: transform .2s, box-shadow .2s, background .2s;
+}
+.newsletter-btn:hover { background: var(--accent-dark) !important; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(192,54,44,.4); }
+
+/* ============================================================================
+   9. SIDEBAR WIDGETS & FORMS (home right column)
+   ========================================================================== */
+.sidebar-widget {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .25s, border-color .25s;
+}
+.sidebar-widget:hover { box-shadow: var(--shadow); border-color: #ddd4c8 !important; }
+.widget-head { border-bottom: 1px solid var(--border); }
+.widget-head h3 { font-family: var(--sans); letter-spacing: .12em !important; font-weight: 700; }
+.widget-head .dot { background: var(--accent) !important; box-shadow: 0 0 0 4px rgba(192,54,44,.14); }
+.form-group input:focus,
+.comment-form-box textarea:focus { border-color: var(--ink) !important; box-shadow: var(--ring) !important; }
+.trending-num { font-family: var(--serif); color: #d9cfc0 !important; }
+.trending-item:hover { background: var(--paper) !important; }
+.trending-item h4 a:hover { color: var(--accent) !important; }
+.login-links a, .auth-footer a { color: var(--accent) !important; }
+
+/* ============================================================================
+   10. AUTH CARDS (login / register)
+   ========================================================================== */
+.auth-card {
+  position: relative;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.auth-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background: var(--accent); }
+.auth-header .logo-icon { background: var(--ink) !important; color: var(--white) !important; box-shadow: 0 8px 20px rgba(23,22,27,.28); }
+.auth-header h1 { font-weight: 800 !important; }
+
+/* ============================================================================
+   11. ARTICLE (single post)
+   ========================================================================== */
+.article-container { border-radius: var(--radius-lg) !important; border: 1px solid var(--border) !important; box-shadow: var(--shadow); }
+.back-link { color: var(--accent) !important; font-weight: 600; letter-spacing: .01em; }
+.back-link:hover { color: var(--accent-dark) !important; }
+.article-category {
+  background: var(--accent-soft) !important;
+  border: 1px solid rgba(192,54,44,.28) !important;
+  color: var(--accent-dark) !important;
+  border-radius: 2px !important;
+  letter-spacing: .14em !important;
+}
+.article-title { font-weight: 800 !important; line-height: 1.12 !important; font-size: clamp(34px, 5vw, 50px) !important; }
+.article-meta .author-avatar { background: var(--ink) !important; color: var(--white) !important; border-radius: 4px !important; }
+/* Drop cap — a real editorial flourish on the first paragraph */
+.article-content > p:first-of-type::first-letter {
+  font-family: var(--serif);
+  font-weight: 800;
+  float: left;
+  font-size: 3.4em;
+  line-height: .82;
+  padding: 6px 12px 0 0;
+  color: var(--accent);
+}
+.article-content a { color: var(--accent) !important; text-underline-offset: 3px; }
+.comments-section { background: var(--paper) !important; border-top: 1px solid var(--border); }
+.comment-card { border-radius: var(--radius) !important; border: 1px solid var(--border) !important; }
+.comment-author .badge { background: var(--accent-soft) !important; color: var(--accent-dark) !important; border-radius: 3px !important; }
+
+/* ============================================================================
+   12. ABOUT PAGE
+   ========================================================================== */
+.page-header { background: var(--grad-ink) !important; }
+.page-header h1 { font-size: clamp(34px, 5vw, 52px) !important; font-weight: 800 !important; }
+.about-card { border-radius: var(--radius-lg) !important; border: 1px solid var(--border) !important; box-shadow: var(--shadow); }
+.about-card h2 { font-weight: 800 !important; }
+.team-header .dot { background: var(--accent) !important; }
+.team-member { border-radius: var(--radius) !important; border: 1px solid var(--border) !important; background: var(--paper) !important; transition: transform .2s, box-shadow .2s, border-color .2s; }
+.team-member:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: #ddd4c8 !important; }
+.team-role { color: var(--accent) !important; letter-spacing: .12em !important; }
+.team-icon svg { color: var(--ink); }
+
+/* ============================================================================
+   13. ADMIN / USER PANEL
+   NOTE: scope the dark-sidebar rules with .sidebar:has(.brand) — the home page
+   also uses .sidebar for its widget column; an unscoped dark bg would break it.
+   ========================================================================== */
+.sidebar:has(.brand) { background: var(--grad-ink) !important; box-shadow: 2px 0 24px rgba(5,5,7,.28) !important; border-right: 1px solid rgba(192,54,44,.18); }
+.sidebar:has(.brand) .brand { border-bottom: 1px solid rgba(255,255,255,.06); }
+.sidebar:has(.brand) .logo-icon { background: var(--white) !important; color: var(--ink) !important; border-radius: 4px !important; }
+.sidebar:has(.brand) .logo-text span { color: var(--accent) !important; }
+.sidebar nav a { border-radius: 5px !important; transition: background .18s, color .18s, transform .18s; }
+.sidebar nav a:hover { transform: translateX(3px); background: rgba(255,255,255,.06) !important; color: var(--white) !important; }
+.sidebar nav a.active {
+  background: var(--accent) !important;
+  color: var(--white) !important;
+  box-shadow: 0 6px 16px rgba(192,54,44,.35) !important;
+}
+.sidebar nav a.logout-btn:hover { background: rgba(192,54,44,.14) !important; color: #ff6a5c !important; }
+
+.topbar { backdrop-filter: saturate(140%) blur(6px); border-bottom: 1px solid var(--border); }
+.topbar .visit-link { color: var(--accent) !important; }
+.topbar .visit-link:hover { color: var(--accent-dark) !important; }
+.avatar, .avatar-btn, .big-avatar { background: var(--ink) !important; color: var(--white) !important; border-radius: 6px !important; box-shadow: 0 4px 12px rgba(23,22,27,.22); }
+.big-avatar { box-shadow: 0 0 0 6px var(--white), 0 0 0 7px var(--border), 0 8px 20px rgba(23,22,27,.14) !important; }
+
+.welcome-banner { background: var(--grad-ink) !important; border-radius: var(--radius-lg) !important; box-shadow: var(--shadow); }
+.welcome-banner h2 { font-weight: 800 !important; }
+
+.btn-create {
+  background: var(--ink) !important; color: var(--white) !important;
+  border-radius: 4px !important; box-shadow: 0 6px 16px rgba(23,22,27,.2);
+  transition: transform .2s, box-shadow .2s, background .2s; letter-spacing: .02em;
+}
+.btn-create:hover { background: #000 !important; transform: translateY(-2px); box-shadow: 0 10px 22px rgba(23,22,27,.3); }
+
+/* Stat cards */
+.stat-card, .card, .panel { border-radius: var(--radius-lg) !important; border: 1px solid var(--border) !important; transition: transform .25s, box-shadow .25s, border-color .25s; }
+.stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: #ddd4c8 !important; }
+.stat-icon { border-radius: 8px !important; }
+.stat-icon.blue  { background: var(--paper-2) !important; color: var(--ink) !important; }
+.stat-icon.red   { background: var(--accent-soft) !important; color: var(--accent) !important; }
+.stat-icon.green { background: #e7f1eb !important; color: var(--green) !important; }
+.stat-icon.orange{ background: #f6eddd !important; color: var(--accent-amber) !important; }
+.stat-body h3 { font-family: var(--serif); }
+.stat-body a { color: var(--accent) !important; }
+
+/* Panels & tables */
+.panel-head { border-bottom: 1px solid var(--border); }
+.panel-head h4 { font-family: var(--serif); font-weight: 700; }
+.panel-head a { background: var(--paper-2) !important; color: var(--ink) !important; border-radius: 4px !important; }
+.panel-head a:hover { background: #e7ded1 !important; }
+th { background: var(--paper) !important; letter-spacing: .1em !important; }
+table tbody tr { transition: background .15s; }
+tr:hover td { background: var(--paper) !important; }
+.post-title-link:hover { color: var(--accent) !important; }
+.badge { border-radius: 3px !important; box-shadow: none; letter-spacing: .04em; }
+.badge.published { background: #e7f1eb !important; color: var(--green) !important; }
+.badge.pending   { background: #f6eddd !important; color: var(--accent-amber) !important; }
+.icon-btn { border-radius: 5px !important; transition: transform .15s, background .15s, border-color .15s; }
+.icon-btn:hover { transform: translateY(-1px); }
+.profile-card, .form-panel { border-radius: var(--radius-lg) !important; border: 1px solid var(--border) !important; }
+.profile-card .role { background: var(--accent-soft) !important; border: 1px solid rgba(192,54,44,.25) !important; color: var(--accent-dark) !important; border-radius: 2px !important; letter-spacing: .1em !important; }
+
+/* ============================================================================
+   14. FOOTER
+   ========================================================================== */
+footer { background: var(--grad-ink) !important; color: #9b968f; border-top: 1px solid rgba(192,54,44,.25); }
+footer .footer-col a { transition: color .2s, transform .2s; display: inline-block; }
+footer .footer-col a:hover { transform: translateX(3px); color: var(--white); }
+
+/* ============================================================================
+   15. INLINE-SVG ICONS injected by beautify.js (replaces emoji)
+   ========================================================================== */
+.icon svg, .stat-icon svg, .emoji svg, .visit-link svg, .team-icon svg { display: block; }
+.sidebar nav a .icon svg { width: 18px; height: 18px; stroke-width: 1.9; }
+.stat-icon svg { width: 24px; height: 24px; stroke-width: 1.8; }
+.visit-link svg { width: 15px; height: 15px; stroke-width: 2; }
+.welcome-banner .emoji svg { width: 46px; height: 46px; stroke-width: 1.4; color: rgba(255,255,255,.9); }
+.team-icon svg { width: 26px; height: 26px; stroke-width: 1.6; }
+
+/* ============================================================================
+   16. SUBTLE SCROLL-REVEAL (unchanged behaviour; hidden state only when JS ready)
+   ========================================================================== */
+.reveal-ready .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
+.reveal-ready .reveal.is-visible { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal-ready .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  * { animation-duration: .001ms !important; transition-duration: .06s !important; }
+}

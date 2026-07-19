@@ -1,0 +1,8 @@
+# Keep SMTP credentials out of version control
+mail_config.php
+
+# Vendored PHPMailer library files (drop-in, not committed)
+assets/lib/PHPMailer/*.php
+
+# Local backups created during redesign
+assets/*.bak
